@@ -7,10 +7,12 @@ for f in glob.glob(root+'/**/*.html',recursive=True):
     pre='../'*depth or './'
     def fix(m):
         a,u=m.group(1),m.group(2).lstrip('/')
+        u,_,h=u.partition('#'); h='#'+h if h else ''
         if u=='': u='index.html'
         elif u.endswith('/'): u+='index.html'
-        return f'{a}="{pre}{u}"'
-    s=re.sub(r'(href|src)="(/[^"]*)"',fix,open(f).read())
+        return f'{a}="{pre}{u}{h}"'
+    s=open(f).read().replace('<meta charset="utf-8">','<meta charset="utf-8">\n<meta name="robots" content="noindex,nofollow">',1)
+    s=re.sub(r'(href|src)="(/[^"]*)"',fix,s)
     open(f,'w').write(s)
 c=open(root+'/s.css').read().replace('url(/fonts/','url(fonts/'); open(root+'/s.css','w').write(c)
 import json

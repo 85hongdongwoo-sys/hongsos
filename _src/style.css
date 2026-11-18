@@ -191,3 +191,5 @@ footer .joinlink a{display:inline-flex;align-items:center;min-height:44px;font-w
 .ck.agree{font-size:.9375rem!important}
 .jf button{min-height:56px;border:0;border-radius:16px;background:#15171C;color:#fff;font-family:var(--disp);font-size:1.25rem;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,.18)}
 @media (prefers-color-scheme:dark){.jf button{background:#F2F2F7;color:#000}.ck input{accent-color:#F2F2F7}}
+h3.sido{font-family:var(--disp);font-weight:400;font-size:1.25rem;margin:1.6rem 0 .6rem;padding-top:.9rem;border-top:2px solid var(--ink0);scroll-margin-top:4.5rem}
+h3.sido:first-of-type{margin-top:.4rem}
