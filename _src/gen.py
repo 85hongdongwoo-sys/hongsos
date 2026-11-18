@@ -63,23 +63,50 @@ def faqld(fs):
     return {"@type": "FAQPage", "mainEntity": [
         {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in fs]}
 
+def hero(where, h1, what, crumb_html, photo, alt, tel, btn2=None, chips=()):
+    ch = ''.join(f'<span>{c}</span>' for c in chips)
+    b2 = f'<a class="btn ghost" href="{btn2[0]}">{E(btn2[1])}<i aria-hidden="true">→</i></a>' if btn2 else ''
+    return f"""<div class="hero">
+<img class="bg" src="/img/{photo}.jpg" alt="{E(alt)}" width="720" height="964" fetchpriority="high">
+<div class="in">
+<nav class="crumb">{crumb_html}</nav>
+<p class="chips">{ch}</p>
+<h1>{h1}</h1>
+<p class="what">{E(what)}</p>
+<p class="cta"><a class="btn pri" href="tel:{tel.replace('-','')}">{PH}<span>전화 {E(tel)}</span></a>{b2}</p>
+</div>
+<span class="ex">예시 사진</span>
+</div>"""
+
+def stats(items):
+    return '<ul class="stats">' + ''.join(f'<li>{icon(i, "ic") if i else ""}<b>{E(a)}</b><span>{E(b)}</span></li>' for i, a, b in items) + '</ul>'
+
+def picker(t, where, tel):
+    cards = ''.join(f'<label class="pk"><input type="checkbox" name="s" value="{E(x)}"><span>{icon(t["slug"], "ic")}<b>{E(x)}</b></span></label>' for x in t['symptoms'])
+    return f"""<section id="pick" class="pick"><div class="pk-top"><h2>어떤 상황인가요?</h2><p>해당하는 걸 모두 고르면, 내용이 적힌 문자로 바로 연결돼요.</p></div>
+<form class="pf" data-tel="{tel.replace('-','')}" data-where="{E(where)}" data-what="{E(t['name'])}">
+<div class="pk-grid">{cards}<label class="pk"><input type="checkbox" name="s" value="잘 모르겠어요"><span><i class="q" aria-hidden="true">?</i><b>잘 모르겠어요</b></span></label></div>
+<label class="pk-addr">주소나 건물 이름 (선택)<input name="addr" placeholder="예: 해운대 OO아파트 101동"></label>
+<p class="pk-btns"><button type="submit" class="btn pri">고른 내용으로 문자 보내기</button><a class="btn line" href="tel:{tel.replace('-','')}">그냥 전화할게요</a></p>
+</form></section>"""
+
+PK_JS = """<script>document.querySelectorAll('.pf').forEach(f=>f.addEventListener('submit',e=>{e.preventDefault();const d=new FormData(f);const s=d.getAll('s');const t=['[홍라이프 긴급출동 문의]',f.dataset.where+' '+f.dataset.what,'상황: '+(s.join(', ')||'직접 설명할게요'),'주소: '+(d.get('addr')||'통화로 알려드릴게요')].join('\\n');const ios=/iP(hone|ad|od)/.test(navigator.userAgent);location.href='sms:'+f.dataset.tel+(ios?'&':'?')+'body='+encodeURIComponent(t);}));</script>"""
+
 def magnet(where, name, what, crumb_html, plist=None, slug=None):
+    t = TBY[slug]
+    tel = plist[0]['phone'] if plist else PHONE
+    h1 = f'<span class="w">{E(where)}</span><u>{E(name)}</u>'
+    out = hero(where, h1, f'{what}. 가까운 동네 업체로 바로 이어 드려요.', crumb_html, t['photo'], f'{where} {name} 작업 현장', tel, ('#pick', '상황 고르고 연결'), (f'📍 {E(where)}', '24시 출장'))
+    out += stats([('', '24시', '밤·주말 출장'), ('', '3곳', '가까운 동네 업체'), ('', '0원', '연결 수수료'), ('', '먼저', '출발 전 금액 안내')])
     if plist:
         rows = ''.join(f'<li><a href="tel:{p["phone"].replace("-","")}" aria-label="{E(p["name"])}, {E(p["phone"])}로 전화 걸기"><span>{E(p["name"])}<small>{E(p.get("note",""))}</small></span><b>{E(p["phone"])}</b></a></li>' for p in plist)
-        call = f'<p class="pros-h">누르면 바로 연결돼요</p><ol class="pros">{rows}</ol>'
-    else:
-        call = f'<a class="num" href="tel:{TEL}"><span>누르면 바로 연결</span><b>{PHONE}</b></a>'
-    return f'''<div class="mag">
-<nav class="crumb">{crumb_html}</nav>
-<p class="where">{icon(slug, 'ic big') if slug else ''}{E(where)}</p>
-<h1 class="{'long' if len(name) > 5 else ''}">{E(name)}</h1>
-<p class="what">{E(what)}</p>
-{call}
-<ul class="promise"><li>동네 업체 3곳 중 골라서</li><li>출발 전에 예상 금액 안내</li></ul>
-</div>'''
+        out += f'<section class="near-pros"><h2>{E(where)} 연결 업체</h2><ol class="pros">{rows}</ol></section>'
+    if slug != 'popup':
+        out += picker(t, where, tel) + PK_JS
+    return out
 
 def shot(t, alt):
-    return f'<figure class="shot"><img src="/img/{t["photo"]}.jpg" alt="{E(alt)}" width="720" height="964"><figcaption>예시 사진</figcaption></figure>'
+    return ''
 
 def sec(h, inner, cls=''):
     return f'<section class="{cls}"><h2>{h}</h2>{inner}</section>'
@@ -99,7 +126,7 @@ def faq(fs):
     return ''.join(f'<details{" open" if i == 0 else ""}><summary>{E(q)}</summary><p>{E(a)}</p></details>' for i, (q, a) in enumerate(fs))
 
 def tiles(items):
-    return '<div class="tiles">' + ''.join(f'<a href="{h}" style="--c:{o["color"]};--ink:{o["ink"]}">{icon(o["slug"])}<span>{E(label)}</span></a>' for h, o, label in items) + '</div>'
+    return '<div class="ptiles">' + ''.join(f'<a href="{h}" style="--c:{o["color"]}"><img src="/img/{o["photo"]}.jpg" alt="" width="720" height="964" loading="lazy">{icon(o["slug"], "ic")}<span>{E(label)}</span></a>' for h, o, label in items) + '</div>'
 
 
 def quote_form(where, phone):
@@ -218,29 +245,36 @@ def area_page(r):
     areas = '<dl class="areas">' + ''.join(f'<div><dt>{E(a)}</dt><dd>{E(b)}</dd></div>' for a, b in r['areas']) + '</dl>'
     near = '<p class="near">' + ''.join(f'<a href="/area/{n}/">{E(RBY[n]["label"])}</a>' for n in r['near']) + '</p>'
     crumb = f'<a href="/">홈</a><a href="/#{r["sslug"]}">{E(r["sido"])}</a><span>{E(r["name"])}</span>'
-    body = f'''<div class="mag home"><nav class="crumb">{crumb}</nav><p class="where">{E(r["alias"])}</p><h1{' class="long"' if len(r['name']) > 5 else ''}>{E(r['name'])}<br>긴급출동</h1><p class="what">{E(r["intro"])}</p><a class="num" href="tel:{TEL}"><span>누르면 바로 연결</span><b>{PHONE}</b></a></div>''' + \
+    ph = TRADES[sum(map(ord, r['slug'])) % 4]['photo']
+    body = hero(L, f'<span class="w">{E(r["alias"])}</span><u>{E(r["name"])}</u> 긴급출동', r['intro'], crumb, ph, f'{L} 출장 수리 현장', PHONE, ('#trades', '무슨 일인지 고르기'), (f'📍 {E(L)}', '21가지 출동', '24시')) + \
+        stats([('', '21가지', '수리·청소·방역'), ('', '24시', '밤·주말 출장'), ('', '0원', '연결 수수료')]) + '<div id="trades"></div>' + \
         ''.join(sec(gn, tiles([(f'/{s}/{r["slug"]}/', TBY[s], TBY[s]['name']) for s in gl]), 'tight') for gn, gl in GROUPS) + \
         sec(f'{E(r["name"])}, 이런 곳이에요', f'<p>{E(r["bld"])}</p>' + areas, 'prose') + \
         sec('옆 동네', near, 'tight')
     ld = {"@context": "https://schema.org", "@graph": [crumbs([('홍라이프 긴급출동', '/'), (L, path)])]}
-    return path, page(title, desc, path, body, ld, loc=r['sido'])
+    return path, page(title, desc, path, body, ld, '#E5372B', '#FFFFFF', loc=r['sido'])
 
 def home():
     bands = ''.join(f'''<li style="--c:{t["color"]};--ink:{t["ink"]}"><a href="/{t["slug"]}/"><span class="t">{icon(t["slug"], "ic big")}<b>{E(t["name"])}</b><small>{E(t["title2"])}</small></span><img src="/img/{t["photo"]}.jpg" alt="" width="720" height="964" loading="lazy"></a></li>''' for t in TRADES[:4])
     nxt = '<p class="soon">' + ''.join(f'<span>{E(n)}</span>' for n in NEXT) + '</p>'
     regs = sido_lists(lambda r: f'/area/{r["slug"]}/')
-    body = f'''<div class="mag home">
-<p class="where">서울·경기·인천·광역시</p>
-<h1>급할 때<br>붙여 두는<br>번호 하나</h1>
-<p class="what">막히고, 새고, 잠기고, 꺼졌을 때. 동네 업체로 바로 이어 드려요.</p>
-<a class="num" href="tel:{TEL}"><span>누르면 바로 연결</span><b>{PHONE}</b></a>
-</div>
-<section class="flush"><h2>가장 많이 찾는 출동</h2><ul class="bands">{bands}</ul></section>
-{''.join(sec(gn, tiles([(f'/{s}/', TBY[s], TBY[s]['name']) for s in gl]), 'tight') for gn, gl in GROUPS)}
+    import json as _j
+    tl = ''.join(f'<label class="tp"><input type="radio" name="t" value="{t["slug"]}"><span><img src="/img/{t["photo"]}.jpg" alt="" width="720" height="964" loading="lazy"><b>{E(t["name"])}</b></span></label>' for t in TRADES)
+    rj = _j.dumps([[s, [[r['slug'], r['name']] for r in L]] for s, ss, sf, L in SIDO], ensure_ascii=False)
+    body = hero('전국', '<span class="w">서울·경기·인천·광역시</span>급할 때 <u>번호 하나</u>', '막히고, 새고, 잠기고, 꺼졌을 때. 동네 업체로 바로 이어 드려요.', '', 'hasugu', '출장 수리 현장', PHONE, ('#find', '무슨 일인지 고르기'), ('📍 수도권·광역시 108곳', '24시 출장')) + \
+        stats([('', '21가지', '수리·청소·방역'), ('', '108곳', '시·군·구'), ('', '24시', '밤·주말 출장'), ('', '0원', '연결 수수료')]) + f'''
+<section id="find" class="pick wiz"><div class="pk-top"><p class="stepn"><b>1</b>/3</p><h2>무슨 일이세요?</h2><p>고르면 동네를 묻고, 그 동네 업체 페이지로 바로 가요.</p></div>
+<div class="wz" data-step="1"><div class="tp-grid">{tl}</div></div>
+<div class="wz" data-step="2" hidden><div class="sd-grid"></div></div>
+<div class="wz" data-step="3" hidden><div class="gu-grid"></div></div>
+<p class="pk-btns"><button type="button" class="btn line back" hidden>← 이전</button></p>
+</section>
+<script>(()=>{{const R={rj};const w=document.getElementById('find');let st=1,t='',sd=null;const S=[...w.querySelectorAll('.wz')],h=w.querySelector('h2'),n=w.querySelector('.stepn b'),bk=w.querySelector('.back');const H=['무슨 일이세요?','어느 지역이세요?','어느 동네세요?'];function go(k){{st=k;S.forEach(x=>x.hidden=+x.dataset.step!==k);h.textContent=H[k-1];n.textContent=k;bk.hidden=k===1;w.scrollIntoView({{behavior:'smooth',block:'start'}})}}w.querySelectorAll('input[name=t]').forEach(i=>i.addEventListener('change',()=>{{t=i.value;const g=w.querySelector('.sd-grid');g.innerHTML='';R.forEach((x,k)=>{{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=x[0];b.onclick=()=>{{sd=k;const q=w.querySelector('.gu-grid');q.innerHTML='';R[k][1].forEach(y=>{{const a=document.createElement('a');a.className='chip';const B=document.querySelector('a.logo').getAttribute('href'),r=B==='/';a.href=(r?'/':B.replace('index.html',''))+t+'/'+y[0]+'/'+(r?'':'index.html');a.textContent=y[1];q.appendChild(a)}});go(3)}};g.appendChild(b)}});go(2)}}));bk.onclick=()=>go(st-1)}})();</script>
+''' + f'''{''.join(sec(gn, tiles([(f'/{s}/', TBY[s], TBY[s]['name']) for s in gl]), 'tight') for gn, gl in GROUPS)}
 {sec('동네별로 찾기', '<p class="lede">수도권과 광역시 108개 시·군·구예요. 인천은 2026년 7월 바뀐 9구 2군 기준입니다.</p>' + regs)}
 {sec('이렇게 연결돼요', '<ol class="steps"><li><b>전화하기</b><p>무슨 일인지, 주소가 어디인지 말씀해 주세요.</p></li><li><b>가까운 업체 연결</b><p>그 동네에서 바로 갈 수 있는 업체로 이어 드려요.</p></li><li><b>금액 듣고 결정</b><p>업체가 출발하기 전에 예상 금액을 듣고 부를지 정하시면 돼요.</p></li></ol>')}'''
     ld = {"@context": "https://schema.org", "@type": "WebSite", "name": "홍라이프 긴급출동", "url": DOMAIN + '/'}
-    return '/', page('홍라이프 긴급출동 | 하수구·누수·열쇠·보일러 24시 업체 연결', '서울·경기·인천·광역시 108개 시·군·구 하수구 막힘, 누수 탐지, 열쇠·도어락, 보일러, 사다리차, 방역 업체를 24시 전화로 연결합니다.', '/', body, ld, loc='전국')
+    return '/', page('홍라이프 긴급출동 | 하수구·누수·열쇠·보일러 24시 업체 연결', '서울·경기·인천·광역시 108개 시·군·구 하수구 막힘, 누수 탐지, 열쇠·도어락, 보일러, 사다리차, 방역 업체를 24시 전화로 연결합니다.', '/', body, ld, '#E5372B', '#FFFFFF', loc='전국')
 
 
 JOIN_TEL = PHONE  # 신청 받을 번호(050 또는 사장님 업무용 번호로 교체)
