@@ -96,8 +96,8 @@ def magnet(where, name, what, crumb_html, plist=None, slug=None):
     t = TBY[slug]
     tel = plist[0]['phone'] if plist else PHONE
     h1 = f'<span class="w">{E(where)}</span><u>{E(name)}</u>'
-    out = hero(where, h1, f'{what}. 가까운 동네 업체로 바로 이어 드려요.', crumb_html, t['photo'], f'{where} {name} 작업 현장', tel, ('#pick', '상황 고르고 연결'), (f'📍 {E(where)}', '24시 출장'))
-    out += stats([('', '24시', '밤·주말 출장'), ('', '3곳', '가까운 동네 업체'), ('', '0원', '연결 수수료'), ('', '먼저', '출발 전 금액 안내')])
+    out = hero(where, h1, f'{what}. 가까운 동네 업체로 바로 이어 드려요.', crumb_html, t['photo'], f'{where} {name} 작업 현장', tel, ('#pick', '상황 고르고 연결'), (f'📍 {E(where)}'))
+    out += stats([('', '3곳', '가까운 동네 업체'), ('', '0원', '연결 수수료'), ('', '먼저', '출발 전 금액 안내')])
     if plist:
         rows = ''.join(f'<li><a href="tel:{p["phone"].replace("-","")}" aria-label="{E(p["name"])}, {E(p["phone"])}로 전화 걸기"><span>{E(p["name"])}<small>{E(p.get("note",""))}</small></span><b>{E(p["phone"])}</b></a></li>' for p in plist)
         out += f'<section class="near-pros"><h2>{E(where)} 연결 업체</h2><ol class="pros">{rows}</ol></section>'
@@ -194,9 +194,9 @@ def area_notes(r, t):
 def region_page(t, r):
     rn = r['name']; L = r['label']
     path = f'/{t["slug"]}/{r["slug"]}/'
-    title = f'{L} {t["name"]} · {t["title2"]} 24시 출장 | 홍라이프 긴급출동'
+    title = f'{L} {t["name"]} · {t["title2"]} 출장 업체 연결 | 홍라이프 긴급출동'
     areas_txt = '·'.join(a for a, _ in r['areas'][:4])
-    desc = f'{L}({r["alias"]}) {t["name"]}. {areas_txt} 생활권별 안내, 참고 비용, 오기 전 조치법을 정리했습니다. 가까운 업체로 24시 전화 연결.'
+    desc = f'{L}({r["alias"]}) {t["name"]}. {areas_txt} 생활권별 안내, 참고 비용, 오기 전 조치법을 정리했습니다. 가까운 동네 업체로 전화 연결.'
     tagps = [t['tagp'][g] for g in r['tags'] if g in t['tagp']][:3]
     ri = REGIONS.index(r)
     fs = [t['faq'][(ri+j) % 3] for j in range(2)] + [r['faq']]
@@ -223,7 +223,7 @@ def region_page(t, r):
 
 def trade_hub(t):
     path = f'/{t["slug"]}/'
-    title = f'{t["name"]} · {t["title2"]} 지역별 24시 출장 | 서울·경기·인천·광역시 | 홍라이프 긴급출동'
+    title = f'{t["name"]} · {t["title2"]} 지역별 출장 업체 | 서울·경기·인천·광역시 | 홍라이프 긴급출동'
     desc = f'서울·경기·인천과 부산·대구·광주·대전·울산·세종 108개 시·군·구 {t["name"]} 업체 연결. 지역별 안내와 참고 비용, 오기 전 조치법.'
     regs = sido_lists(lambda r: f'/{t["slug"]}/{r["slug"]}/')
     crumb = f'<a href="/">홈</a><span>{E(t["name"])}</span>'
@@ -240,14 +240,14 @@ def sido_lists(href):
 
 def area_page(r):
     L = r['label']; path = f'/area/{r["slug"]}/'
-    title = f'{L} 24시 출장 수리·청소·방역 업체 연결 | 홍라이프 긴급출동'
+    title = f'{L} 출장 수리·청소·방역 업체 연결 | 홍라이프 긴급출동'
     desc = f'{L}({r["alias"]}) 하수구·누수·열쇠·보일러·전기·청소·방역 등 21가지 출동 업체를 한 번에. 생활권별 안내와 전화 연결.'
     areas = '<dl class="areas">' + ''.join(f'<div><dt>{E(a)}</dt><dd>{E(b)}</dd></div>' for a, b in r['areas']) + '</dl>'
     near = '<p class="near">' + ''.join(f'<a href="/area/{n}/">{E(RBY[n]["label"])}</a>' for n in r['near']) + '</p>'
     crumb = f'<a href="/">홈</a><a href="/#{r["sslug"]}">{E(r["sido"])}</a><span>{E(r["name"])}</span>'
     ph = TRADES[sum(map(ord, r['slug'])) % 4]['photo']
-    body = hero(L, f'<span class="w">{E(r["alias"])}</span><u>{E(r["name"])}</u> 긴급출동', r['intro'], crumb, ph, f'{L} 출장 수리 현장', PHONE, ('#trades', '무슨 일인지 고르기'), (f'📍 {E(L)}', '21가지 출동', '24시')) + \
-        stats([('', '21가지', '수리·청소·방역'), ('', '24시', '밤·주말 출장'), ('', '0원', '연결 수수료')]) + '<div id="trades"></div>' + \
+    body = hero(L, f'<span class="w">{E(r["alias"])}</span><u>{E(r["name"])}</u> 긴급출동', r['intro'], crumb, ph, f'{L} 출장 수리 현장', PHONE, ('#trades', '무슨 일인지 고르기'), (f'📍 {E(L)}', '21가지 출동')) + \
+        stats([('', '21가지', '수리·청소·방역'), ('', '0원', '연결 수수료')]) + '<div id="trades"></div>' + \
         ''.join(sec(gn, tiles([(f'/{s}/{r["slug"]}/', TBY[s], TBY[s]['name']) for s in gl]), 'tight') for gn, gl in GROUPS) + \
         sec(f'{E(r["name"])}, 이런 곳이에요', f'<p>{E(r["bld"])}</p>' + areas, 'prose') + \
         sec('옆 동네', near, 'tight')
@@ -261,8 +261,8 @@ def home():
     import json as _j
     tl = ''.join(f'<label class="tp"><input type="radio" name="t" value="{t["slug"]}"><span><img src="/img/{t["photo"]}.jpg" alt="" width="720" height="964" loading="lazy"><b>{E(t["name"])}</b></span></label>' for t in TRADES)
     rj = _j.dumps([[s, [[r['slug'], r['name']] for r in L]] for s, ss, sf, L in SIDO], ensure_ascii=False)
-    body = hero('전국', '<span class="w">서울·경기·인천·광역시</span>급할 때 <u>번호 하나</u>', '막히고, 새고, 잠기고, 꺼졌을 때. 동네 업체로 바로 이어 드려요.', '', 'hasugu', '출장 수리 현장', PHONE, ('#find', '무슨 일인지 고르기'), ('📍 수도권·광역시 108곳', '24시 출장')) + \
-        stats([('', '21가지', '수리·청소·방역'), ('', '108곳', '시·군·구'), ('', '24시', '밤·주말 출장'), ('', '0원', '연결 수수료')]) + f'''
+    body = hero('전국', '<span class="w">서울·경기·인천·광역시</span>급할 때 <u>번호 하나</u>', '막히고, 새고, 잠기고, 꺼졌을 때. 동네 업체로 바로 이어 드려요.', '', 'hasugu', '출장 수리 현장', PHONE, ('#find', '무슨 일인지 고르기'), ('📍 수도권·광역시 108곳')) + \
+        stats([('', '21가지', '수리·청소·방역'), ('', '108곳', '시·군·구'), ('', '0원', '연결 수수료')]) + f'''
 <section id="find" class="pick wiz"><div class="pk-top"><p class="stepn"><b>1</b>/3</p><h2>무슨 일이세요?</h2><p>고르면 동네를 묻고, 그 동네 업체 페이지로 바로 가요.</p></div>
 <div class="wz" data-step="1"><div class="tp-grid">{tl}</div></div>
 <div class="wz" data-step="2" hidden><div class="sd-grid"></div></div>
@@ -274,7 +274,7 @@ def home():
 {sec('동네별로 찾기', '<p class="lede">수도권과 광역시 108개 시·군·구예요. 인천은 2026년 7월 바뀐 9구 2군 기준입니다.</p>' + regs)}
 {sec('이렇게 연결돼요', '<ol class="steps"><li><b>전화하기</b><p>무슨 일인지, 주소가 어디인지 말씀해 주세요.</p></li><li><b>가까운 업체 연결</b><p>그 동네에서 바로 갈 수 있는 업체로 이어 드려요.</p></li><li><b>금액 듣고 결정</b><p>업체가 출발하기 전에 예상 금액을 듣고 부를지 정하시면 돼요.</p></li></ol>')}'''
     ld = {"@context": "https://schema.org", "@type": "WebSite", "name": "홍라이프 긴급출동", "url": DOMAIN + '/'}
-    return '/', page('홍라이프 긴급출동 | 하수구·누수·열쇠·보일러 24시 업체 연결', '서울·경기·인천·광역시 108개 시·군·구 하수구 막힘, 누수 탐지, 열쇠·도어락, 보일러, 사다리차, 방역 업체를 24시 전화로 연결합니다.', '/', body, ld, '#E5372B', '#FFFFFF', loc='전국')
+    return '/', page('홍라이프 긴급출동 | 하수구·누수·열쇠·보일러 출장 업체 연결', '서울·경기·인천·광역시 108개 시·군·구 하수구 막힘, 누수 탐지, 열쇠·도어락, 보일러, 사다리차, 방역 업체를 전화로 연결합니다.', '/', body, ld, '#E5372B', '#FFFFFF', loc='전국')
 
 
 JOIN_TEL = PHONE  # 신청 받을 번호(050 또는 사장님 업무용 번호로 교체)
